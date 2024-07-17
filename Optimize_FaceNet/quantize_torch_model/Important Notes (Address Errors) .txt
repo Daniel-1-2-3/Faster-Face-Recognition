@@ -1,0 +1,48 @@
+Made changes to InceptionResNetV1 model architecture
+1.  Some functions yielded error such as: 
+    NotImplementedError: Could not run 'some function' with arguments from the 'CPU' backend
+    This indicated that the input to the function should have been quantized (type torch.quint8), but it wasn't.
+    
+    Use this to correct error:
+
+    if input.dtype != torch.quint8:
+            input = torch.quantize_per_tensor(input, scale=0.0079, zero_point=0, dtype=torch.quint8) #requantize 
+    
+    In this code, the scale and zero_point used to quantize the input to the function should be the same scale and zero_point
+    used in the quant stub of the model
+
+2.  Some functions yielded error such as:
+    NotImplementedError: Could not run 'some function' with arguments from the 'QuantizedCPU' backend
+    This indicated that the input to the function should have been dequantized (type torch.float32), but it was quantized.
+
+    Use this to correct error:
+
+    input = input.dequantize()
+
+3.  RuntimeError: promoteTypes with quantized numbers is not handled yet; figure out what the correct rules should be, offending types: QUInt8 Float
+    This error appears for the operation out * self.scale + x
+    In this operation:
+        "out" is the input tensor representing the image, and is in quantized form (type torch.quint8)
+        "x" is in quantized form (type torch.quint8)
+        "self.scale" is a float (floating point number)
+    These two types are incompatible for standard multiplication and devision
+
+    Solution:
+        1. Dequantize "x" and "out", now they are in torch.float32 tensor format:
+            x = x.dequantize()
+            out = out.dequantize()
+
+        2. Convert "self.scale" from a float to a tensor (type torch.float32) with the same shape and dimensions as "out":
+            self.scale = torch.tensor(self.scale)
+            self.scale = self.scale.expand_as(out) #expand as matches the shape of self.scale to the shape of quantized tensor
+        
+        3. Replace standard multiplication and addition (out*self.scale+x) with torch operations of add and multiply that were meant for tensors:
+            out = torch.add(torch.multiply(out, self.scale), x)
+        
+        4. Requantize the value of "out", using scale and zero point values from the model's quant stub
+            out = torch.quantize_per_tensor(out, scale=0.0079, zero_point=0, dtype=torch.quint8) 
+
+4.  In Inception_resnet_v1.py (located in site-packages\facenet_pytorch\models\Inception_resnet_v1.py):
+    line 199, in the function "forward" and line 167, in the other function "forward"
+    1.  Must ADD x = x.dequantize() to beggining of these functions during QUANTIZATION
+    2.  Must REMOVE x = x.dequantize() during INFERENCE 

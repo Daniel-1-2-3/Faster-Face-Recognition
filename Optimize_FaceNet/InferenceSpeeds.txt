@@ -1,0 +1,8 @@
+InceptionResNetV1 FaceNet model inference speeds after 
+different optimization techniques (seconds):
+
+1. No optimization: 0.25
+2. Fuse model layers: 0.23
+2. Int8 quantization + fuse layers: 0.09
+3. OpenVino runtime (optimized for intel CPU): 
+4. OpenVino runtime + fuse layers + Int8 quantization: 
