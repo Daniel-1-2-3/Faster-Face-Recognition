@@ -71,20 +71,20 @@ class RecognizeFaces:
                 #distances usually range from 0.20 to 1.10, threshold for face to qualify as a match is 0.25
                 
             distance = sum(distances)/len(distances) #average 10 emb distances for more accurate analysis 
-            if distance < 0.45: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
+            if distance < 0.35: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
                 matches.append((name, distance)) 
             print('Emb Distance', name, ':', distance) 
             
         if len(matches) == 0:
-            return None
+            return None, None
             
         #choose the highest match, choose shortest distance
         lowest_distance = matches[0][1]
-        highest_match = matches[0][0]
+        highest_match = (matches[0][0], lowest_distance)
         for i, (match, distance) in enumerate(matches):
             if i!=0 and distance < lowest_distance:
                 lowest_distance = distance
-                highest_match = match #calculate closest match
+                highest_match = (match, distance) #calculate closest match
                     
         print('Highest match', highest_match)
         print('Speed', end_time-start_time)
@@ -106,10 +106,11 @@ class RecognizeFaces:
                 #iterate over the faces and process
                 for i, (x, y, w, h) in enumerate(faces):
                     cropped_img = frame[y : y+h, x : x+w]
-                    highest_match = self.analyze_faces(cropped_img)
+                    highest_match, distance = self.analyze_faces(cropped_img)
                     frame_copy = copy.deepcopy(frame)
                     if highest_match is not None:
-                        cv2.putText(frame_copy, highest_match, (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+                        percentage_match = round(100 - max((distance - 0.2), 0)/(0.7 - 0.2) * 100, 2) #max means that if distance - 0.2 < 0, will return the larger of the 2 numbers (returns 0)
+                        cv2.putText(frame_copy, f'{highest_match} {percentage_match}%', (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
                         cv2.rectangle(frame_copy, (x, y), (x + w, y + h), (0, 200, 0), 2)
                         cv2.imshow(f'face{i}', frame_copy)
                     else:
