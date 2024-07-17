@@ -85,7 +85,7 @@ class FacesDatabase:
             ret, frame = cap.read()
             frame = cv2.flip(frame, 1)
             
-            if cv2.waitKey(1) == ord('w'):
+            if cv2.waitKey(1) & 0xFF == 32:
                 frame_copy = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 faces = haar_cascade.detectMultiScale(
                     frame_copy, scaleFactor=1.05, minNeighbors=2, minSize=(100,100)
@@ -97,8 +97,11 @@ class FacesDatabase:
                 else:
                     frame = np.ones_like(frame) * 0
             
-            cv2.putText(frame, f'Press w to take photo, q to exit camera', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
+            _, width, _ = frame.shape
+            cv2.rectangle(frame, (0, 0), (width, 90), (250, 250, 250), thickness=cv2.FILLED)
+            cv2.putText(frame, f'Press space to take photo, q to exit camera', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
             cv2.putText(frame, f'Number of photos taken: {img_count}', (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
+            cv2.rectangle(frame, ((width-300)//2, 130), ((width-300)//2+300, 410), (100, 100, 200), 1)
             cv2.imshow('Webcam', frame)
             
             if cv2.waitKey(1) == ord('q'):
