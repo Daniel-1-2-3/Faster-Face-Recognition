@@ -61,19 +61,19 @@ class RecognizeFaces:
             name = row[0] #column one of the row is always the name of the person
             ref_embeddings = [] #list in which we load into the 10 reference embeddings of the person's face in the columns 1-10 of that row
             for i in range (1, len(row)):
-                emb = pickle.loads(row[i]) #deserializes the embedding
+                if row[i] is not None:
+                    emb = pickle.loads(row[i]) #deserializes the embedding
+                else:
+                    emb = None
                 ref_embeddings.append(emb)
             
             distances = []
             for emb in ref_embeddings:
-                distance = torch.dist(emb, face_emb, p=2).item() #calcuate Euclidean distance between the reference face embed and embed of face in the picture, closer distance = closer match
-                distances.append(distance)
-                #distances usually range from 0.20 to 1.10, threshold for face to qualify as a match is 0.25
-                
-            distance = sum(distances)/len(distances) #average 10 emb distances for more accurate analysis 
-            if distance < 0.35: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
-                matches.append((name, distance)) 
-            print('Emb Distance', name, ':', distance) 
+                if emb is not None:
+                    distance = torch.dist(emb, face_emb, p=2).item() #calcuate Euclidean distance between the reference face embed and embed of face in the picture, closer distance = closer match
+                    #distances usually range from 0.20 to 1.10, threshold for face to qualify as a match is 0.25
+                    if distance < 0.35: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
+                        matches.append((name, distance)) 
             
         if len(matches) == 0:
             return None, None

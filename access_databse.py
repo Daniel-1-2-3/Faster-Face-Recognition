@@ -21,6 +21,22 @@ class AccessDatabase:
         rows = self.cur.fetchall() #list of the all the rows in the database, info on every person
         for row in rows:
             print(str(row[0]), end=" ")
-
-database = AccessDatabase()
-database.delete_person('Charlie')
+            
+    def clear_database(self):
+        self.cur.execute('''SELECT * FROM embeddings''')
+        rows = self.cur.fetchall() #list of the all the rows in the database, info on every person
+        for row in rows:
+            print(str(row[0]), end=" ")
+        print('')
+            
+        self.cur.execute("DELETE FROM embeddings")
+        self.con.commit()
+        
+        self.cur.execute('''SELECT * FROM embeddings''')
+        rows = self.cur.fetchall() #list of the all the rows in the database, info on every person
+        for row in rows:
+            print(str(row[0]), end=" ")
+            
+if __name__ == "__main__":
+    database = AccessDatabase()
+    database.clear_database()
