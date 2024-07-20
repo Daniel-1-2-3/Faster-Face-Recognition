@@ -3,6 +3,8 @@ Quantization: convert floating point weights and activation values to integer va
 range [-1, 1] may be converted to an integer [-127, 127]. 
 reference https://pytorch.org/blog/quantization-in-practice/#post-training-static-quantization-ptq  
 This is static quantization: converting both weights and activations to lowered to int8 during quantization
+
+*Could convert to OpenVino format for even faster inference
 """
 from tqdm import tqdm 
 import torch
@@ -16,7 +18,7 @@ from torchvision import transforms
 
 class CustomDataset:
     def __init__ (self):
-        self.folder_path = 'C:\\Daniel\\Python\\OnClick Face Recognition\\Optimize_FaceNet\\Humans'
+        self.folder_path = 'Optimize_FaceNet\\Humans'
         self.transform = transforms.Compose([
             transforms.Resize((500, 500)),
             transforms.ToTensor(),
@@ -68,6 +70,6 @@ with torch.inference_mode():
 model_static_quantized = torch.quantization.convert(model_static_quantized, inplace=False) #inplace indicates it replaces previous model with the quantized one
 
 print(model_static_quantized)
-torch.save(model_static_quantized.state_dict(), 'quant_torch_model.pth')
+torch.save(model_static_quantized.state_dict(), 'Optimize_FaceNet\\model_versions\\quant_torch_model.pth')
             
 
