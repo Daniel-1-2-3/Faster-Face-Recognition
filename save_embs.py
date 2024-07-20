@@ -112,13 +112,10 @@ class FacesDatabase:
                     cv2.imshow('Webcam', frame_copy)
                     cv2.waitKey(7)
                 break
+        cap.release()
+        cv2.destroyAllWindows()
         
-        time.sleep(1)
-        blank_frame = np.ones((height, width, 3), dtype=np.uint8) * 255
-        cv2.putText(blank_frame, 'Pictures collected', (20, height//2), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
-        cv2.putText(blank_frame, 'Extracting faces...', (20, height//2 + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
-        cv2.imshow('Webcam', blank_frame)
-        cv2.waitKey(1)
+        print('Pictures collected, extracting faces...')
         
         cropped_imgs = []
         for i, img in enumerate(images):                    
@@ -144,19 +141,19 @@ class FacesDatabase:
         
         blank_frame = np.ones((height, width, 3), dtype=np.uint8) * 255
         if len(cropped_imgs)==0:
-            cv2.putText(blank_frame, 'No faces found', (20, height//2), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
-            cv2.waitKey(1)
-            time.sleep(3)
+            print('No faces found')
+            time.sleep(1)
             sys.exit()
         else:
-            cv2.putText(blank_frame, f'Extracted {len(cropped_imgs)} faces', (20, height//2), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
-            cv2.putText(blank_frame, f'Check folder "{folder_name}" for extracted faces', (20, height//2 + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
-            cv2.putText(blank_frame, f'Remove any faulty extractions, space key when ready to proceed', (20, height//2 + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
-            cv2.imshow('Webcam', blank_frame)
-            while True:
-                cv2.imshow('Webcam', blank_frame)
-                if cv2.waitKey(1) & 0xFF == ord(' '):
-                    break   
+            print(f'Extracted {len(cropped_imgs)} faces')
+            print(f'Check folder "{folder_name}" for extracted faces, remove any faulty extractions')
+            proceed = input(f'Ready to proceed? (Y/N): ')
+            
+            if proceed.lower() == 'n':
+                print('Aborting...')
+                time.sleep(1)
+                sys.exit()
+            
             self.record_embeddings(folder_name)
 
 if __name__ == '__main__':

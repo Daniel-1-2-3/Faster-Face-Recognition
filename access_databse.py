@@ -39,4 +39,4 @@ class AccessDatabase:
             
 if __name__ == "__main__":
     database = AccessDatabase()
-    database.clear_database()
+    database.delete_person('Charlie')

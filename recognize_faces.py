@@ -72,7 +72,7 @@ class RecognizeFaces:
                 if emb is not None:
                     distance = torch.dist(emb, face_emb, p=2).item() #calcuate Euclidean distance between the reference face embed and embed of face in the picture, closer distance = closer match
                     #distances usually range from 0.20 to 1.10, threshold for face to qualify as a match is 0.25
-                    if distance < 0.35: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
+                    if distance < 0.30: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
                         matches.append((name, distance)) 
             
         if len(matches) == 0:
@@ -94,27 +94,37 @@ class RecognizeFaces:
     def recognize(self):
         cap = cv2.VideoCapture(0)
         haar_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        open_windows = []
         while True:
             ret, frame = cap.read()
+            height, width, _ = frame.shape
             frame = cv2.flip(frame, 1)
             
             if cv2.waitKey(1) & 0xFF == 32:
                 #crop the frame using MTCNN to leave just the faces
                 faces = haar_cascade.detectMultiScale(
-                        frame, scaleFactor=1.05, minNeighbors=2, minSize=(100,100)
+                        frame, scaleFactor=1.05, minNeighbors=3, minSize=(100,100)
                     )
+                
+                #close face{i} windows that are currently open
+                if len(open_windows)>0:
+                    for window_name in open_windows:
+                        if cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE) >= 1: #if window still open, wasn't close manually 
+                            cv2.destroyWindow(window_name)
+                open_windows = []
+                 
                 #iterate over the faces and process
                 for i, (x, y, w, h) in enumerate(faces):
                     cropped_img = frame[y : y+h, x : x+w]
                     highest_match, distance = self.analyze_faces(cropped_img)
+                    blank_frame = np.ones((height, width, 3), dtype=np.uint8) * 255
                     frame_copy = copy.deepcopy(frame)
+                    frame = blank_frame
+                
                     if highest_match is not None:
+                        open_windows.append(f'face{i}')
                         percentage_match = round(100 - max((distance - 0.2), 0)/(0.7 - 0.2) * 100, 2) #max means that if distance - 0.2 < 0, will return the larger of the 2 numbers (returns 0)
                         cv2.putText(frame_copy, f'{highest_match} {percentage_match}%', (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
-                        cv2.rectangle(frame_copy, (x, y), (x + w, y + h), (0, 200, 0), 2)
-                        cv2.imshow(f'face{i}', frame_copy)
-                    else:
-                        cv2.putText(frame_copy, 'Not Recognized', (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
                         cv2.rectangle(frame_copy, (x, y), (x + w, y + h), (0, 200, 0), 2)
                         cv2.imshow(f'face{i}', frame_copy)
                         
