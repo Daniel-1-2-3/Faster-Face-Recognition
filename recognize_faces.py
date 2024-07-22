@@ -63,18 +63,16 @@ class RecognizeFaces:
             for i in range (1, len(row)):
                 if row[i] is not None:
                     emb = pickle.loads(row[i]) #deserializes the embedding
-                else:
-                    emb = None
-                ref_embeddings.append(emb)
+                    ref_embeddings.append(emb)
             
-            distances = []
-            for emb in ref_embeddings:
-                if emb is not None:
-                    distance = torch.dist(emb, face_emb, p=2).item() #calcuate Euclidean distance between the reference face embed and embed of face in the picture, closer distance = closer match
-                    #distances usually range from 0.20 to 1.10, threshold for face to qualify as a match is 0.25
-                    if distance < 0.30: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
-                        matches.append((name, distance)) 
-            
+            emb = sum(ref_embeddings)/len(ref_embeddings)
+            distance = torch.dist(emb, face_emb, p=2).item() #calcuate Euclidean distance between the reference face embed and embed of face in the picture, closer distance = closer match
+        
+            #distances usually range from 0.20 to 1.10, threshold for face to qualify as a match is 0.25
+            print(name, distance)
+            if distance < 0.35: #if distance between the 2 vectors is less than 0.50, it is a match. Threshold value taken from trial and error
+                matches.append((name, distance)) 
+
         if len(matches) == 0:
             return None, None
             
@@ -100,7 +98,7 @@ class RecognizeFaces:
             height, width, _ = frame.shape
             frame = cv2.flip(frame, 1)
             
-            if cv2.waitKey(1) & 0xFF == 32:
+            if cv2.waitKey(1) & 0xFF == ord(' '):
                 #crop the frame using MTCNN to leave just the faces
                 faces = haar_cascade.detectMultiScale(
                         frame, scaleFactor=1.05, minNeighbors=3, minSize=(100,100)
@@ -113,12 +111,12 @@ class RecognizeFaces:
                             cv2.destroyWindow(window_name)
                 open_windows = []
                  
+                frame_copy = copy.deepcopy(frame)
                 #iterate over the faces and process
                 for i, (x, y, w, h) in enumerate(faces):
-                    cropped_img = frame[y : y+h, x : x+w]
+                    cropped_img = frame_copy[y : y+h, x : x+w]
                     highest_match, distance = self.analyze_faces(cropped_img)
                     blank_frame = np.ones((height, width, 3), dtype=np.uint8) * 255
-                    frame_copy = copy.deepcopy(frame)
                     frame = blank_frame
                 
                     if highest_match is not None:
